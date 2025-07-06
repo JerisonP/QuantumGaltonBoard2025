@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galton Board Simulation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    #controls {
+      margin-bottom: 10px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    🎯 Balls: <input type="number" id="ballInput" value="1000" min="100" max="10000" step="100">
+    🧱 Layers: <input type="number" id="layerInput" value="10" min="2" max="20">
+    <button id="resetBtn">🔁 Run Simulation</button>
+  </div>
+  <canvas id="galtonCanvas" width="800" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("galtonCanvas");
+    const ctx = canvas.getContext("2d");
+    const ballInput = document.getElementById("ballInput");
+    const layerInput = document.getElementById("layerInput");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let balls = [], pegs = [], bins = [], animationId = null;
+    const gravity = 1, radius = 2.5;
+    let layers = 10, ballCount = 1000, holes, pegSpacingX, pegSpacingY, dropped = 0;
+    let maxVisualHeight, floorY;
+
+    function setup(newLayers, newBallCount) {
+      cancelAnimationFrame(animationId);
+      balls = []; pegs = []; bins = [];
+      layers = newLayers;
+      ballCount = newBallCount;
+      holes = layers + 1;
+      pegSpacingX = canvas.width / holes;
+      pegSpacingY = 30;
+      bins = Array.from({length: holes}, () => []);
+      dropped = 0;
+      maxVisualHeight = Math.min(160, 60 + (ballCount / 1000) * 15);
+      floorY = 50 + layers * pegSpacingY + 40 + maxVisualHeight;
+
+      for (let row = 0; row < layers; row++) {
+        const y = 50 + row * pegSpacingY;
+        const count = row + 1;
+        for (let i = 0; i < count; i++) {
+          const offset = (canvas.width - (count - 1) * pegSpacingX) / 2;
+          const x = offset + i * pegSpacingX;
+          pegs.push({x, y});
+        }
+      }
+      animate();
+    }
+
+    function dropBall() {
+      balls.push({ x: canvas.width / 2, y: 10, vx: 0, vy: 0, inBin: false, bin: null, color: "#888" });
+      dropped++;
+    }
+
+    function getColorFromX(x) {
+      const centerX = canvas.width / 2;
+      const maxDist = canvas.width / 2;
+      const t = Math.abs(x - centerX) / maxDist;
+      const hue = 240 * (1 - t);
+      return `hsl(${hue}, 90%, 55%)`;
+    }
+
+    function updateBalls() {
+      const maxInBin = Math.max(...bins.map(b => b.length)) || 1;
+
+      balls.forEach(ball => {
+        if (!ball.inBin) {
+          ball.vy += gravity;
+          ball.y += ball.vy;
+          ball.x += ball.vx;
+
+          pegs.forEach(peg => {
+            const dx = ball.x - peg.x, dy = ball.y - peg.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < pegSpacingX / 4) {
+              ball.vy *= 0.6;
+              ball.vx += (Math.random() - 0.5) * 2;
+              ball.color = getColorFromX(ball.x);
+            }
+          });
+
+          if (ball.y > 50 + pegSpacingY * layers) {
+            let bin = Math.floor(ball.x / pegSpacingX);
+            bin = Math.max(0, Math.min(bin, holes - 1));
+            ball.inBin = true;
+            ball.bin = bin;
+            ball.color = getColorFromX(ball.x);
+            ball.vx = (Math.random() - 0.5) * 0.2;
+            ball.vy = 0;
+            bins[bin].push(ball);
+          }
+        } else {
+          const binLeft = ball.bin * pegSpacingX + radius;
+          const binRight = (ball.bin + 1) * pegSpacingX - radius;
+          const index = bins[ball.bin].indexOf(ball);
+          const targetY = floorY - (index / maxInBin) * maxVisualHeight;
+
+          const dy = targetY - ball.y;
+          ball.vy += dy * 0.05 - ball.vy * 0.1;
+
+          ball.y += ball.vy;
+          ball.x += ball.vx;
+
+          if (ball.y + radius > floorY) {
+            ball.y = floorY - radius;
+            ball.vy *= -0.2;
+            ball.vx *= 0.3;
+          }
+
+          if (ball.x - radius < binLeft) {
+            ball.x = binLeft + radius;
+            ball.vx *= -0.5;
+          }
+          if (ball.x + radius > binRight) {
+            ball.x = binRight - radius;
+            ball.vx *= -0.5;
+          }
+        }
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#666";
+      pegs.forEach(peg => {
+        ctx.beginPath();
+        ctx.arc(peg.x, peg.y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+
+      balls.forEach(ball => {
+        ctx.fillStyle = ball.color;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+
+      for (let i = 0; i < holes; i++) {
+        const x = i * pegSpacingX;
+        ctx.strokeStyle = "#ccc";
+        ctx.beginPath();
+        ctx.moveTo(x, floorY);
+        ctx.lineTo(x, floorY - maxVisualHeight);
+        ctx.stroke();
+
+        const prob = dropped > 0 ? (bins[i].length / dropped * 100).toFixed(1) : "0.0";
+        ctx.fillStyle = "#000";
+        ctx.font = "10px Arial";
+        ctx.fillText(`${prob}%`, x + pegSpacingX * 0.3, floorY + 15);
+      }
+
+      ctx.strokeStyle = "#999";
+      ctx.beginPath();
+      ctx.moveTo(0, floorY);
+      ctx.lineTo(canvas.width, floorY);
+      ctx.stroke();
+    }
+
+    function animate() {
+      if (dropped < ballCount) {
+        const dropRate = Math.min(20, Math.max(1, Math.floor(ballCount / 500)));
+        for (let i = 0; i < dropRate && dropped < ballCount; i++) dropBall();
+      }
+      updateBalls();
+      draw();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    resetBtn.onclick = () => {
+      const newBalls = parseInt(ballInput.value);
+      const newLayers = parseInt(layerInput.value);
+      setup(newLayers, newBalls);
+    };
+
+    setup(layers, ballCount);
+  </script>
+</body>
+</html>
