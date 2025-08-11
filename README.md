@@ -7,11 +7,9 @@ Monte Carlo Quantum Galton Board
 Quantum Pioneers
 
 ## Team Members
-- **Jerison**: WISER Enrollment ID: WP2025-XXXX (Placeholder)
-- **Nero**: WISER Enrollment ID: WP2025-YYYY (Placeholder)
-- **Ipsita**: WISER Enrollment ID: WP2025-ZZZZ (Placeholder)
-
-*Note: WISER Enrollment IDs are placeholders and will be updated upon receipt.*
+- **Jerison**: WISER Enrollment ID: gst-8vtomJcLfgtcBKK
+- **Nero**: WISER Enrollment ID: gst-sMD4rUbGsjcTnWk
+- **Ipsita**: WISER Enrollment ID: gst-N6LT9Gwq5jTZsiR
 
 ## Project Summary (500 Words)
 The Monte Carlo Quantum Galton Board project, developed for the Womanium & WISER Quantum Program 2025, implements quantum and classical simulations of a Galton Board to demonstrate quantum computational advantages in solving high-dimensional problems, as outlined in the "Universal Statistical Simulator" paper ([arXiv:2202.01735](https://arxiv.org/abs/2202.01735)). This project aligns with the hackathon’s theme of quantum algorithms for differential equations, with applications in particle transport and sustainable energy systems, supporting UN Sustainable Development Goal 7 (Affordable and Clean Energy). Our team—Jerison (Physics BS, Python and quantum noise expertise), Nero (Physics BS, theoretical physics), and Ipsita (Physics MS, quantum information and chemical engineering)—leverages Qiskit and Python to deliver a comprehensive solution, comparing quantum circuits with classical Monte Carlo methods to highlight potential exponential speed-ups.
